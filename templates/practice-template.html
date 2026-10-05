@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent 设计模式跨章练习</title>
+<style>
+:root{
+  --bg:#f7f5f0;--card:#ffffff;--ink:#1f1d1a;--sub:#6b665d;--line:#e4e0d6;
+  --accent:#2f5bd3;--accent-soft:#e6ecfb;--ok:#1f8a4c;--ok-soft:#e3f4ea;--bad:#c2412d;--bad-soft:#fbe8e4;--warn:#b7791f;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#151513;--card:#201f1c;--ink:#ece9e2;--sub:#a39e93;--line:#34322d;
+  --accent:#7b9cff;--accent-soft:#232c45;--ok:#5cc98a;--ok-soft:#1d3326;--bad:#ff8a73;--bad-soft:#3a221d;--warn:#e0a84a;
+}}
+:root[data-theme="dark"]{
+  --bg:#151513;--card:#201f1c;--ink:#ece9e2;--sub:#a39e93;--line:#34322d;
+  --accent:#7b9cff;--accent-soft:#232c45;--ok:#5cc98a;--ok-soft:#1d3326;--bad:#ff8a73;--bad-soft:#3a221d;--warn:#e0a84a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 -apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:640px;margin:0 auto;padding:20px 16px 120px}
+header h1{font-size:22px;margin:4px 0 4px}
+header p{margin:0;color:var(--sub);font-size:14px}
+.progress{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0 8px;margin-bottom:6px}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.progress small{color:var(--sub);font-size:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 16px;margin:14px 0}
+.tag{display:inline-block;font-size:12px;color:var(--accent);background:var(--accent-soft);border-radius:6px;padding:1px 8px;margin-bottom:8px}
+.q{font-weight:600;margin:0 0 12px}
+.scene{background:var(--bg);border-radius:10px;padding:10px 12px;margin:0 0 12px;font-size:15px;color:var(--sub)}
+.opt{display:block;width:100%;text-align:left;font:inherit;color:inherit;background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;margin:8px 0;cursor:pointer}
+.opt:active{transform:scale(.99)}
+.opt.ok{border-color:var(--ok);background:var(--ok-soft)}
+.opt.bad{border-color:var(--bad);background:var(--bad-soft)}
+.opt[disabled]{cursor:default}
+.fb{display:none;margin-top:12px;padding:10px 12px;border-radius:10px;font-size:15px}
+.fb.show{display:block}
+.fb.ok{background:var(--ok-soft)}
+.fb.bad{background:var(--bad-soft)}
+.fb b{display:block;margin-bottom:2px}
+.pool,.picked{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;font-size:15px;color:inherit;background:var(--card);border:1.5px solid var(--line);border-radius:999px;padding:7px 12px;cursor:pointer}
+.chip.used{opacity:.35;pointer-events:none}
+.chip.sel{border-color:var(--accent);background:var(--accent-soft)}
+.slot{min-height:46px;border:1.5px dashed var(--line);border-radius:10px;padding:8px;margin:10px 0}
+.slot .step{display:flex;gap:8px;align-items:center;padding:6px 4px;font-size:15px}
+.slot .n{flex:none;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:13px;display:grid;place-items:center}
+.slot .step.ok .n{background:var(--ok)}.slot .step.bad .n{background:var(--bad)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.btn{font:inherit;font-size:15px;border:0;border-radius:10px;padding:10px 16px;cursor:pointer;background:var(--accent);color:#fff}
+.btn.ghost{background:transparent;color:var(--sub);border:1.5px solid var(--line)}
+.btn[disabled]{opacity:.4;cursor:default}
+.match{border-top:1px solid var(--line);padding:12px 0}
+.match:first-of-type{border-top:0}
+.match p{margin:0 0 8px;font-size:15px}
+.match .mark{font-weight:700;margin-left:4px}
+.tf{display:flex;gap:8px;margin-top:8px}
+.tf .opt{margin:0;text-align:center}
+.lab{display:flex;justify-content:space-between;font-size:14px;color:var(--sub);margin:12px 0 4px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.seg{display:flex;border:1.5px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{flex:1;font:inherit;font-size:15px;padding:8px;border:0;background:transparent;color:var(--sub);cursor:pointer}
+.seg button.on{background:var(--accent);color:#fff}
+.meter{margin:10px 0}
+.meter span{font-size:13px;color:var(--sub)}
+.meter .bar{height:10px;margin-top:4px}
+.meter .bar i{transition:width .25s}
+#qBar i{background:var(--ok)}
+#tBar i{background:var(--warn)}
+.verdict{font-size:15px;padding:10px 12px;border-radius:10px;background:var(--bg);margin-top:10px}
+.code{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
+.code .in{max-width:640px;margin:0 auto;display:flex;gap:10px;align-items:center}
+.code output{flex:1;font:13px/1.4 ui-monospace,Menlo,monospace;color:var(--sub);word-break:break-all}
+.note{font-size:13px;color:var(--sub);margin-top:24px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="tag">样例 · 跨章综合练习</span>
+    <h1>Agent 设计模式 · 第 1–4 章</h1>
+    <p>提示链 · 路由 · 并行化 · 反思。5 道题，约 8 分钟。每题第一次作答计分，做完把底部答题码粘贴回学习群。</p>
+  </header>
+
+  <div class="progress"><div class="bar"><i id="pBar"></i></div><small id="pTxt">已完成 0 / 5</small></div>
+
+  <!-- Q1 情境选择 -->
+  <section class="card" id="q1">
+    <span class="tag">1 · 情境判断</span>
+    <div class="scene">每天早上，你要让 Agent 拉出「昨日销量」和「昨日退款」两张表，再根据两张表写一段经营日报发到群里。</div>
+    <p class="q">这套流程怎么搭最合适？</p>
+    <button class="opt" data-k="A">三步全部并行：拉销量、拉退款、写日报同时开跑</button>
+    <button class="opt" data-k="B">两张表并行拉，都拉完再交给下一步写日报</button>
+    <button class="opt" data-k="C">三步串成一条链，一步一步按顺序跑</button>
+    <button class="opt" data-k="D">先装一个路由，判断今天该拉哪张表</button>
+    <div class="fb"></div>
+  </section>
+
+  <!-- Q2 点选排序 -->
+  <section class="card" id="q2">
+    <span class="tag">2 · 排顺序</span>
+    <div class="scene">一个电商客服 Agent 收到客户消息后的完整处理流程。</div>
+    <p class="q">按实际执行顺序，依次点下面的步骤：</p>
+    <div class="pool" id="pool2"></div>
+    <div class="slot" id="slot2"></div>
+    <div class="row"><button class="btn" id="chk2" disabled>提交顺序</button><button class="btn ghost" id="rst2">重排</button></div>
+    <div class="fb"></div>
+  </section>
+
+  <!-- Q3 配对 -->
+  <section class="card" id="q3">
+    <span class="tag">3 · 配对</span>
+    <p class="q">每个场景最核心用的是哪种模式？每行点一个。</p>
+    <div id="m3"></div>
+    <div class="row"><button class="btn" id="chk3" disabled>提交配对</button></div>
+    <div class="fb"></div>
+  </section>
+
+  <!-- Q4 判断 -->
+  <section class="card" id="q4">
+    <span class="tag">4 · 判断对错</span>
+    <p class="q">下面三句话，各自是对还是错？</p>
+    <div id="t4"></div>
+    <div class="fb"></div>
+  </section>
+
+  <!-- Q5 可调模型 -->
+  <section class="card" id="q5">
+    <span class="tag">5 · 动手调一调</span>
+    <p class="q">反思循环（Reflection）：写稿的 Agent 产出初稿，审稿的 Agent 挑刺，来回改。拖动滑块看看代价。</p>
+    <div class="seg" id="seg5"><button data-s="long" class="on">长文（明天发）</button><button data-s="news">快讯（10 分钟内发）</button></div>
+    <div class="lab"><span>最多来回几轮</span><b id="rv">3 轮</b></div>
+    <input type="range" id="rounds" min="1" max="8" value="3">
+    <label style="display:flex;gap:8px;align-items:center;font-size:15px;margin-top:8px"><input type="checkbox" id="brake" checked> 审稿人说「可以了」就提前停</label>
+    <div class="meter"><span>成稿质量</span><div class="bar" id="qBar"><i></i></div></div>
+    <div class="meter"><span>耗时（相对发稿时限）</span><div class="bar" id="tBar"><i></i></div></div>
+    <div class="verdict" id="vd"></div>
+    <p class="q" style="margin-top:16px">调完回答：给「快讯」上反思循环，最该担心什么？</p>
+    <button class="opt" data-k="A">审稿 Agent 会漏看错别字</button>
+    <button class="opt" data-k="B">每多一轮就多一次模型调用，赶不上发稿时限</button>
+    <button class="opt" data-k="C">来回太多轮会让文章越改越差</button>
+    <div class="fb"></div>
+  </section>
+
+  <p class="note">这是样例页：题目取自你这门课第 1–4 章的误区库和你的误区记录。正式使用时由学习法在章节收尾或卡住时生成，答题码回传后自动判分、写学习进度、错题进误区记录。</p>
+</div>
+
+<div class="code"><div class="in"><output id="code">做题中…</output><button class="btn" id="copy">复制答题码</button></div></div>
+
+<script>
+// 练习编号：与本文件名一致，答题码靠它对回 progress-assets 里的原题
+const PID='ADP-跨章1-4-2026-09-28';
+const R={}; const t0=Date.now();
+const $=s=>document.querySelector(s);
+function done(k,v){R[k]=v;const n=Object.keys(R).length;$('#pBar').style.width=n/5*100+'%';$('#pTxt').textContent=`已完成 ${n} / 5`;code();}
+function code(){
+  const p=[];
+  ['q1','q2','q3','q4','q5'].forEach((k,i)=>p.push(`${i+1}:${R[k]??'-'}`));
+  const m=Math.max(1,Math.round((Date.now()-t0)/60000));
+  $('#code').textContent=`练习 ${PID} ${p.join(' ')} ${m}分`;
+}
+function fb(sec,ok,title,body){const f=sec.querySelector('.fb');f.className='fb show '+(ok?'ok':'bad');f.innerHTML=`<b>${title}</b>${body}`;}
+
+// 单选题
+function single(id,ans,exp){
+  const sec=$(id);
+  sec.querySelectorAll(':scope > .opt').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.k,ok=k===ans;
+    sec.querySelectorAll(':scope > .opt').forEach(x=>{x.disabled=true;if(x.dataset.k===ans)x.classList.add('ok');});
+    if(!ok)b.classList.add('bad');
+    fb(sec,ok,ok?'答对了':'差一点',exp[k]);
+    done(id.slice(1),k+(ok?'✓':'✗'));
+  });
+}
+single('#q1','B',{
+  A:'写日报要等两张表都拿到才能写，它依赖前两步的结果，不能一起开跑。判断能不能并行，只看一件事：是不是要等别人算完才能算。',
+  B:'两张表互不依赖，可以同时拉；写日报要用到两张表，必须等它们都完成。这就是并行和链的组合，不是二选一。',
+  C:'能跑，但两张表互不依赖却排队等，白白多花时间。',
+  D:'每天两张表都要拉，没有"选哪条路"的分岔，路由在这里用不上。'
+});
+single('#q5','B',{
+  A:'漏看是审稿质量的问题，快讯真正卡住的是时间。',
+  B:'每多一轮反思，就多一次模型调用，时间和费用都在涨。长文值得多磨几轮，快讯赶时效，一般不上或只跑一轮。',
+  C:'有"可以了就停"和"最多几轮"两道刹车，不会无限改。快讯真正的问题是来不及。'
+});
+
+// Q2 排序
+const steps2=['判断客户是退货、咨询还是投诉','按问题类型查对应的订单信息','写出回复草稿','换一个模型审查草稿','审查通过后发给客户'];
+let picked2=[];
+function draw2(){
+  const pool=$('#pool2'),slot=$('#slot2');pool.innerHTML='';
+  const order=[3,0,4,1,2];
+  order.forEach(i=>{const c=document.createElement('button');c.className='chip'+(picked2.includes(i)?' used':'');c.textContent=steps2[i];c.onclick=()=>{picked2.push(i);draw2();};pool.appendChild(c);});
+  slot.innerHTML=picked2.length?picked2.map((i,n)=>`<div class="step" data-i="${i}"><span class="n">${n+1}</span>${steps2[i]}</div>`).join(''):'<span style="color:var(--sub);font-size:14px">点上面的步骤，按顺序排在这里</span>';
+  $('#chk2').disabled=picked2.length!==5;
+}
+$('#rst2').onclick=()=>{if(!R.q2){picked2=[];draw2();}};
+$('#chk2').onclick=()=>{
+  let right=0;$('#slot2').querySelectorAll('.step').forEach((el,n)=>{const ok=+el.dataset.i===n;if(ok)right++;el.classList.add(ok?'ok':'bad');});
+  const ok=right===5;$('#chk2').disabled=true;$('#rst2').disabled=true;$('#pool2').querySelectorAll('.chip').forEach(c=>c.classList.add('used'));
+  fb($('#q2'),ok,ok?'顺序全对':`对了 ${right} / 5 步`,'第 1 步是路由（分岔口先选路），第 2–5 步是一条链；第 4 步的审查必须换一个模型，自己审自己会放水。路由管选哪条路，链管这条路上的先后顺序，两者经常一起用。');
+  done('q2',ok?'序✓':`序${right}/5`);
+};
+draw2();
+
+// Q3 配对
+const pats=['提示链','路由','并行化','反思'];
+const rows3=[
+  ['一篇长文写完，先交给另一个模型挑刺，改完再挑，直到过关',3],
+  ['客户消息先分成退货、咨询、投诉三类，每类走不同的处理流程',1],
+  ['同时向三家供应商询价，全部回来后汇总成一张比价表',2],
+  ['先从商品资料里提炼卖点，再写标题，最后写详情页',0]
+];
+const pick3={};
+$('#m3').innerHTML=rows3.map((r,i)=>`<div class="match" data-r="${i}"><p>${String.fromCharCode(9312+i)} ${r[0]}<span class="mark"></span></p><div class="pool">${pats.map((p,j)=>`<button class="chip" data-j="${j}">${p}</button>`).join('')}</div></div>`).join('');
+$('#m3').querySelectorAll('.match').forEach(row=>{
+  row.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{
+    if(R.q3)return;row.querySelectorAll('.chip').forEach(x=>x.classList.remove('sel'));c.classList.add('sel');
+    pick3[row.dataset.r]=+c.dataset.j;$('#chk3').disabled=Object.keys(pick3).length!==4;
+  });
+});
+$('#chk3').onclick=()=>{
+  let right=0,wrong=[];
+  rows3.forEach((r,i)=>{const ok=pick3[i]===r[1];if(ok)right++;else wrong.push(pats[r[1]]);
+    const m=$(`#m3 .match[data-r="${i}"] .mark`);m.textContent=ok?'✓':`✗ 应为${pats[r[1]]}`;m.style.color=ok?'var(--ok)':'var(--bad)';});
+  $('#chk3').disabled=true;
+  fb($('#q3'),right===4,right===4?'全部配对正确':`对了 ${right} / 4`,'分辨小技巧：有"来回改直到过关"的是反思；有"先分类再走不同流程"的是路由；有"同时做、再汇总"的是并行；"上一步产出喂下一步"的是提示链。');
+  done('q3',right===4?'配✓':`配${right}/4(${wrong.join('、')}✗)`);
+};
+
+// Q4 判断
+const tf4=[
+  ['用 asyncio 把几个任务一起跑，就是多核真并行',false,'asyncio 是单线程快速切换，属于"并发"，不是多核"并行"。'],
+  ['提示链至少要拆成三步，才算合格',false,'步数看任务里有几个自然的交接点，两步、三步、更多，甚至不拆都可能。'],
+  ['反思循环除了"审稿人说可以了"，还应该设一个最多几轮的上限',true,'两道刹车：暗号放行，加上最大轮次，防止来回死循环。']
+];
+const ans4=[];
+$('#t4').innerHTML=tf4.map((t,i)=>`<div class="match" data-i="${i}"><p>${String.fromCharCode(9312+i)} ${t[0]}<span class="mark"></span></p><div class="tf"><button class="opt" data-v="1">对</button><button class="opt" data-v="0">错</button></div></div>`).join('');
+$('#t4').querySelectorAll('.match').forEach(row=>{
+  const i=+row.dataset.i;
+  row.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+    const v=b.dataset.v==='1',ok=v===tf4[i][1];ans4[i]=ok;
+    row.querySelectorAll('.opt').forEach(x=>{x.disabled=true;if((x.dataset.v==='1')===tf4[i][1])x.classList.add('ok');});
+    if(!ok)b.classList.add('bad');
+    const m=row.querySelector('.mark');m.textContent=ok?' ✓':' ✗';m.style.color=ok?'var(--ok)':'var(--bad)';
+    const p=document.createElement('p');p.style.cssText='font-size:14px;color:var(--sub);margin:8px 0 0';p.textContent=tf4[i][2];row.appendChild(p);
+    if(ans4.filter(x=>x!==undefined).length===3){
+      const r=ans4.filter(Boolean).length;
+      fb($('#q4'),r===3,r===3?'三句全判对':`判对 ${r} / 3`,'这三句分别来自第 3 章、第 1 章、第 4 章的常见误区。');
+      done('q4','判'+ans4.map(x=>x?'✓':'✗').join(''));
+    }
+  });
+});
+
+// Q5 模拟
+let scene='long';
+$('#seg5').querySelectorAll('button').forEach(b=>b.onclick=()=>{scene=b.dataset.s;$('#seg5').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));sim();});
+$('#rounds').oninput=sim;$('#brake').onchange=sim;
+function sim(){
+  const n=+$('#rounds').value,brake=$('#brake').checked;$('#rv').textContent=n+' 轮';
+  const used=brake?Math.min(n,3):n;
+  let q=55;for(let i=0;i<used;i++)q+=(100-q)*0.38;
+  const per=scene==='long'?4:22, limit=100;
+  const t=Math.min(100,18+used*per);
+  $('#qBar i').style.width=Math.round(q)+'%';$('#tBar i').style.width=t+'%';
+  let v;
+  if(scene==='news'&&t>=100)v=`跑了 ${used} 轮，已经超过发稿时限，稿子再好也晚了。`;
+  else if(scene==='news')v=`跑了 ${used} 轮，勉强赶上。快讯通常只跑 0–1 轮。`;
+  else if(!brake&&n>=6)v=`没开提前停，硬跑满 ${n} 轮：质量只多了一点点，调用次数却翻倍。`;
+  else v=`${brake&&n>3?`设了 ${n} 轮上限，但第 ${used} 轮审稿人就说"可以了"，提前停下。`:`跑了 ${used} 轮。`}长文不赶时间，多磨几轮值得。`;
+  $('#vd').textContent=v;
+}
+sim();
+
+$('#copy').onclick=async()=>{
+  const s=$('#code').textContent;
+  try{await navigator.clipboard.writeText(s);}catch(e){const ta=document.createElement('textarea');ta.value=s;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(_){}ta.remove();}
+  $('#copy').textContent='已复制';setTimeout(()=>$('#copy').textContent='复制答题码',1500);
+};
+code();
+</script>
+</body>
+</html>
