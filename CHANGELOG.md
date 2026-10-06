@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 3.4.0（2026-10-06）配套 Skill 一起发布、笔记位置可自定义
+
+- GitHub 仓库新增 `companion-skills/`：自带找书蒸馏 `hualun-book-distillation-workflow`、解释视频 `hualun-explainer-video`（2.0.0，新增白板马克笔风：汉字按真实笔顺一笔一笔写）、本地配音 `hualun-local-tts`，下载学习法不再缺块
+- README 新增「配套 Skill 与安装」：每个依赖做什么、缺了会怎样、怎么装；女娲、show-me、Obsidian 等第三方 Skill 只放原作者链接
+- `learning_paths.py` 支持环境变量 `LEARNING_VAULT`：没装 Obsidian 也能把笔记存到任意文件夹（笔记是普通 Markdown）
+
 ## 3.3.0（2026-10-05）讲解形式与解释视频
 
 - 新增 `references/teaching-formats.md`（讲解形式唯一真源）：讲新概念时按类型主动选流程图 / 关系图 / 互动网页 / 文字类比，不再只在卡住时才用视觉手段

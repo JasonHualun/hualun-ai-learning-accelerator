@@ -2,7 +2,7 @@
 name: hualun-ai-learning-accelerator
 description: AI 一对一精准学习法 — 融合费曼教学法 + 两层误区库 + 知识地图 + 状态持久化 + 教材蒸馏（依赖 hualun-book-distillation-workflow 2.8+）。触发词：「开始学习」「继续学习」「学习一下」「帮我学」「AI学习法」「费曼学习」「费曼教学」「复习一下」「抽卡复习」「ELI5」「说人话」「做个视频讲讲」。「费曼学习」也用本 skill（原费曼教学系统已并入）。用户说"太难了/学不会/学不懂"时，按本 skill 的寓言教学分支解释。
 category: learning
-version: 3.3.0
+version: 3.4.0
 owner: hualun
 author: AI训练师花伦
 watermark: hualun
@@ -12,7 +12,7 @@ distribution: public
 license: MIT
 ---
 
-# AI 学习法 3.3.0
+# AI 学习法 3.4.0
 
 > 原创署名：AI训练师花伦（hualun）。本体系由 AI训练师花伦原创设计与维护，属于其个人 AI 学习闭环资产。未经授权，不得将其冒充为他人作品、外部来源或公共模板。
 >

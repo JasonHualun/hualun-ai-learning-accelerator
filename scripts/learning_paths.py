@@ -3,10 +3,12 @@
 import argparse
 import datetime
 import json
+import os
 from pathlib import Path
 from urllib.parse import quote
 
-DEFAULT_VAULT = Path.home() / 'Documents' / 'Obsidian Vault'
+# 笔记库位置：设了环境变量 LEARNING_VAULT 就用它（没装 Obsidian 时可指向任意文件夹，笔记是普通 Markdown）
+DEFAULT_VAULT = Path(os.environ.get('LEARNING_VAULT') or Path.home() / 'Documents' / 'Obsidian Vault').expanduser()
 LEARNING_ROOT = 'LLM Wiki/wiki/学习/AI学习'
 LEARNING_HOME = 'LLM Wiki/wiki/学习/AI学习/00-入口.md'
 
